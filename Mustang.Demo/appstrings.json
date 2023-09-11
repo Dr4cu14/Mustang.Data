@@ -1,0 +1,11 @@
+﻿{
+  "connnections": {
+    "commondb": {
+      "Master": "",
+      "Salve": [
+        "123",
+        "123"
+      ]
+    }
+  }
+}
