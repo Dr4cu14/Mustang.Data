@@ -43,21 +43,21 @@ namespace Mustang.SqlBuilder
             if (value is Int64)
                 return DbType.Int64;
 
-            //if (value is UInt16)
-            //    return DbType.UInt16;
+            if (value is UInt16)
+                return DbType.UInt16;
 
-            //if (value is UInt32)
-            //    return DbType.UInt32;
+            if (value is UInt32)
+                return DbType.UInt32;
 
-            //if (value is UInt64)
-            //    return DbType.UInt64;
+            if (value is UInt64)
+                return DbType.UInt64;
 
             //浮点
-            //if (value is Single)
-            //    return DbType.Single;
+            if (value is Single)
+                return DbType.Single;
 
-            //if (value is Double)
-            //    return DbType.Double;
+            if (value is Double)
+                return DbType.Double;
 
             if (value is Decimal)
                 return DbType.Decimal;

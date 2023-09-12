@@ -21,7 +21,7 @@ namespace Mustang.SqlBuilder
 
         protected SqlBuilder(T entity = null)
         {
-            EntityContext = EntityCache.GetEntityContext(entity);
+            EntityContext = EntityHelper.GetEntityContext(entity);
         }
 
         public abstract SqlBuilder<T> ReturnId();
@@ -218,9 +218,8 @@ namespace Mustang.SqlBuilder
 
         public SqlBuilder<T> Builder()
         {
-            //if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
-            //
-              SqlStatement.Append(";");
+            if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
+                SqlStatement.Append(";");
 
             return this;
         }
