@@ -138,7 +138,8 @@ namespace Mustang.SqlBuilder
 
             SqlStatement.AppendLine(ConditionBuilder(conditionOperator, EntityContext.TableName, propertyValue.PropertyName));
 
-            SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, value));
+            var filedName = ParameterToken + EntityContext.TableName +"_"+ propertyValue.PropertyName;
+            SqlParameterList.Add(new SqlParameter(filedName, value));
 
             return this;
         }
@@ -157,7 +158,7 @@ namespace Mustang.SqlBuilder
 
             for (var i = 0; i < value.Count; i++)
             {
-                var filedName = ParameterToken + propertyValue.PropertyName + i;
+                var filedName = ParameterToken + EntityContext.TableName + "_" + propertyValue.PropertyName + i;
                 SqlStatement.Append(filedName);
                 SqlParameterList.Add(new SqlParameter(filedName, value[i]));
             }
@@ -181,7 +182,7 @@ namespace Mustang.SqlBuilder
 
             for (var i = 0; i < value.Count; i++)
             {
-                var filedName = ParameterToken + propertyValue.PropertyName + i;
+                var filedName = ParameterToken + EntityContext.TableName + "_" + propertyValue.PropertyName + i;
                 SqlStatement.Append(filedName);
                 SqlParameterList.Add(new SqlParameter(filedName, value[i]));
             }
