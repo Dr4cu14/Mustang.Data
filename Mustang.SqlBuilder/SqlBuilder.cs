@@ -19,16 +19,19 @@ namespace Mustang.SqlBuilder
 
         protected static string ParameterToken => "@";
 
-        public abstract SqlBuilder<T> ReturnId();
+        public virtual SqlBuilder<T> ReturnId()
+        {
+            return this;
+        }
 
         public SqlBuilder<T> Exists(string columnName)
         {
-            Statement.AppendLine($"SELECT {EntityContext.TableName}.{columnName} FROM {EntityContext.FullNameTableName}");
+            Statement.AppendLine($"SELECT {EntityContext.TableName}.{columnName} FROM {EntityContext.FullNameTableName} ");
 
             return this;
         }
 
-        public SqlBuilder<T> Insert(T entity)
+        public virtual SqlBuilder<T> Insert(T entity)
         {
             EntityContext = EntityHelper.GetEntityContext(entity);
 
@@ -46,7 +49,7 @@ namespace Mustang.SqlBuilder
                 SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-            Statement.AppendLine($@"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
+            Statement.AppendLine($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
 
             return this;
         }
@@ -67,7 +70,7 @@ namespace Mustang.SqlBuilder
                 SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-            Statement.AppendLine($@"UPDATE {EntityContext.FullNameTableName} SET {string.Join(",", columnNames)}");
+            Statement.AppendLine($"UPDATE {EntityContext.FullNameTableName} SET {string.Join(",", columnNames)}");
 
             return this;
         }
@@ -92,7 +95,7 @@ namespace Mustang.SqlBuilder
                 columnNames.Add($"{EntityContext.TableName}.{propertyValue.PropertyName}");
             }
 
-            Statement.AppendLine($@"SELECT {string.Join(",", columnNames)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
+            Statement.AppendLine($"SELECT {string.Join(",", columnNames)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
 
             return this;
         }

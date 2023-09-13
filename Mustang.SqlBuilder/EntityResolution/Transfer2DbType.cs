@@ -24,7 +24,7 @@ namespace Mustang.SqlBuilder
         }
 
 
-        public static DbType TransferToDataType(Object value)
+        public static DbType TransferToDataType(object value)
         {
             //字符及字符串
             if (value is Char)
@@ -77,6 +77,63 @@ namespace Mustang.SqlBuilder
             //Guid
             if (value is Guid)
                 return DbType.Guid;
+
+            throw new ApplicationException(@"Database Unsopported Value type " + value.GetType().Name);
+        }
+
+        public static DbType TransferToTdDataType(object value)
+        {
+            //字符及字符串
+            if (value is char)
+                return DbType.String;
+
+            if (value is string)
+                return DbType.String;
+
+            //整型
+            if (value is short)
+                return DbType.Int32;
+
+            if (value is int)
+                return DbType.Int32;
+
+            if (value is long)
+                return DbType.Int32;
+
+            if (value is UInt16)
+                return DbType.Int32;
+
+            if (value is UInt32)
+                return DbType.Int32;
+
+            if (value is UInt64)
+                return DbType.Int32;
+
+            //浮点
+            if (value is Single)
+                return DbType.Int32;
+
+            if (value is Double)
+                return DbType.Int32;
+
+            if (value is decimal)
+                return DbType.Int32;
+
+            //布尔
+            if (value is bool)
+                return DbType.Int32;
+
+            //时间
+            if (value is DateTime)
+                return DbType.String;
+
+            //枚举
+            if (value is Enum)
+                return DbType.Int32;
+
+            //Guid
+            if (value is Guid)
+                return DbType.String;
 
             throw new ApplicationException(@"Database Unsopported Value type " + value.GetType().Name);
         }
