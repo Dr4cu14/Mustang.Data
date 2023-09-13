@@ -6,14 +6,10 @@ namespace Mustang.SqlBuilder
 {
     public class MsSqlBuilder<T> : SqlBuilder<T> where T : class, new()
     {
-        public MsSqlBuilder(T entity) : base(entity)
-        {
-
-        }
 
         public override SqlBuilder<T> ReturnId()
         {
-            SqlStatement.AppendLine("SELECT SCOPE_IDENTITY();");
+            Statement.AppendLine("SELECT SCOPE_IDENTITY();");
             return this;
         }
 

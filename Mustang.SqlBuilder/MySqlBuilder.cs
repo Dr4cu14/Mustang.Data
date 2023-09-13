@@ -6,14 +6,10 @@ namespace Mustang.SqlBuilder
 {
     public class MySqlBuilder<T> : SqlBuilder<T> where T : class, new()
     {
-        public MySqlBuilder(T entity) : base(entity)
-        {
-
-        }
 
         public override SqlBuilder<T> ReturnId()
         {
-            SqlStatement.AppendLine("SELECT LAST_INSERT_ID();");
+            Statement.AppendLine("SELECT LAST_INSERT_ID();");
             return this;
         }
 

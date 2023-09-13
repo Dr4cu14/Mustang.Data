@@ -9,25 +9,29 @@ namespace Mustang.SqlBuilder
 {
     public abstract class SqlBuilder<T> where T : class, new()
     {
-        public string Sql => SqlStatement.ToString();
+        public string Sql => Statement.ToString();
 
-        protected readonly EntityContext EntityContext;
+        protected EntityContext EntityContext;
+
+        protected readonly StringBuilder Statement = new();
+
+        public readonly List<SqlParameter> SqlParameterList = new();
 
         protected static string ParameterToken => "@";
 
-        protected readonly StringBuilder SqlStatement = new StringBuilder();
-
-        public readonly List<SqlParameter> SqlParameterList = new List<SqlParameter>();
-
-        protected SqlBuilder(T entity = null)
-        {
-            EntityContext = EntityHelper.GetEntityContext(entity);
-        }
-
         public abstract SqlBuilder<T> ReturnId();
 
-        public SqlBuilder<T> Insert()
+        public SqlBuilder<T> Exists(string columnName)
         {
+            Statement.AppendLine($"SELECT {EntityContext.TableName}.{columnName} FROM {EntityContext.FullNameTableName}");
+
+            return this;
+        }
+
+        public SqlBuilder<T> Insert(T entity)
+        {
+            EntityContext = EntityHelper.GetEntityContext(entity);
+
             var columnNames = new List<string>();
             var values = new List<string>();
 
@@ -42,15 +46,15 @@ namespace Mustang.SqlBuilder
                 SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-            SqlStatement.AppendLine($@"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
+            Statement.AppendLine($@"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
 
             return this;
         }
 
-        
-
-        public SqlBuilder<T> Update()
+        public SqlBuilder<T> Update(T entity)
         {
+            EntityContext = EntityHelper.GetEntityContext(entity);
+
             var columnNames = new List<string>();
 
             foreach (var propertyValue in EntityContext.PropertyValues)
@@ -63,34 +67,42 @@ namespace Mustang.SqlBuilder
                 SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-            SqlStatement.AppendLine($@"UPDATE {EntityContext.FullNameTableName} SET {string.Join(",", columnNames)}");
+            Statement.AppendLine($@"UPDATE {EntityContext.FullNameTableName} SET {string.Join(",", columnNames)}");
 
             return this;
         }
 
-        public SqlBuilder<T> Delete()
+        public SqlBuilder<T> Delete(T entity)
         {
-            SqlStatement.AppendLine($"DELETE FROM {EntityContext.FullNameTableName}");
+            EntityContext = EntityHelper.GetEntityContext(entity);
+
+            Statement.AppendLine($"DELETE FROM {EntityContext.FullNameTableName}");
 
             return this;
         }
 
         public SqlBuilder<T> Query()
         {
+            EntityContext = EntityHelper.GetEntityContext(default(T));
+
             var columnNames = new List<string>();
 
             foreach (var propertyValue in EntityContext.PropertyValues)
             {
-                columnNames.Add(EntityContext.TableName + "." + propertyValue.PropertyName);
+                columnNames.Add($"{EntityContext.TableName}.{propertyValue.PropertyName}");
             }
-            SqlStatement.AppendLine($@"SELECT {string.Join(",", columnNames)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
+
+            Statement.AppendLine($@"SELECT {string.Join(",", columnNames)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
 
             return this;
         }
 
         public SqlBuilder<T> Query(List<string> selectColumnList)
         {
-            SqlStatement.AppendLine($@"SELECT {string.Join(",", selectColumnList)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
+            EntityContext = EntityHelper.GetEntityContext(default(T));
+
+            Statement.AppendLine($@"SELECT {string.Join(",", selectColumnList)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
+
             return this;
         }
 
@@ -121,112 +133,112 @@ namespace Mustang.SqlBuilder
             var relationEntityContext = EntityHelper.GetEntityContext(default(TRelationTable));
             var relationTableProperty = GetJoinTablePropertyByExpress(relationEntityContext, relationoinExpression);
 
-            SqlStatement.AppendLine($@"{joinType} JOIN {joinEntityContext.FullNameTableName} {joinEntityContext.TableName} ON {JoinConditionBuilder(joinEntityContext.TableName, joinExpressionProperty.PropertyName, conditionOperator, relationEntityContext.TableName, relationTableProperty.PropertyName)}; ");
+            Statement.AppendLine($@"{joinType} JOIN {joinEntityContext.FullNameTableName} {joinEntityContext.TableName} ON {JoinConditionBuilder(joinEntityContext.TableName, joinExpressionProperty.PropertyName, conditionOperator, relationEntityContext.TableName, relationTableProperty.PropertyName)} ");
 
             return this;
         }
 
-        public SqlBuilder<T> WhereCondition(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, ConditionOperator conditionOperator, object value)
+        public SqlBuilder<T> JoinCondition<TJoinTable, TRelationTable>(Expression<Func<TJoinTable, object>> joinExpression, ConditionOperator conditionOperator, Expression<Func<TRelationTable, object>> relationoinExpression)
         {
-            if (SqlStatement.ToString().LastIndexOf("WHERE", StringComparison.Ordinal) == -1)
-                SqlStatement.AppendLine("WHERE");
+            var joinEntityContext = EntityHelper.GetEntityContext(default(TJoinTable));
+            var joinExpressionProperty = GetJoinTablePropertyByExpress(joinEntityContext, joinExpression);
 
-            if (conditionRelation != ConditionRelation.NULL)
-                SqlStatement.Append($"{conditionRelation} ");
+            var relationEntityContext = EntityHelper.GetEntityContext(default(TRelationTable));
+            var relationTableProperty = GetJoinTablePropertyByExpress(relationEntityContext, relationoinExpression);
 
-            var propertyValue = GetPropertyByExpress(EntityContext, expr);
-
-            SqlStatement.AppendLine(ConditionBuilder(conditionOperator, EntityContext.TableName, propertyValue.PropertyName));
-
-            var filedName = ParameterToken + EntityContext.TableName +"_"+ propertyValue.PropertyName;
-            SqlParameterList.Add(new SqlParameter(filedName, value));
+            Statement.Append($" {ConditionRelation.AND} {JoinConditionBuilder(joinEntityContext.TableName, joinExpressionProperty.PropertyName, conditionOperator, relationEntityContext.TableName, relationTableProperty.PropertyName)}");
 
             return this;
         }
 
-        public SqlBuilder<T> WhereInCondition<TType>(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, ConditionOperator conditionOperator, List<TType> value)
+        public SqlBuilder<T> WhereCondition(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, ConditionOperator conditionOperator, object value = null)
         {
-            if (SqlStatement.ToString().LastIndexOf("WHERE", StringComparison.Ordinal) == -1)
-                SqlStatement.AppendLine("WHERE");
+            if (conditionRelation==ConditionRelation.NULL)
+                Statement.AppendLine(" WHERE ");
 
             if (conditionRelation != ConditionRelation.NULL)
-                SqlStatement.Append($"{conditionRelation} ");
+                Statement.Append($"{conditionRelation} ");
 
             var propertyValue = GetPropertyByExpress(EntityContext, expr);
 
-            SqlStatement.Append($" {propertyValue.PropertyName} IN (");
+            Statement.AppendLine(ConditionBuilder(conditionOperator, EntityContext.TableName, propertyValue.PropertyName));
 
-            for (var i = 0; i < value.Count; i++)
+            if (value != null)
             {
-                var filedName = ParameterToken + EntityContext.TableName + "_" + propertyValue.PropertyName + i;
-                SqlStatement.Append(filedName);
-                SqlParameterList.Add(new SqlParameter(filedName, value[i]));
+                var filedName = $"{ParameterToken}{EntityContext.TableName}_{propertyValue.PropertyName}";
+                SqlParameterList.Add(new SqlParameter(filedName, value));
             }
 
-            SqlStatement.AppendLine(")");
+            return this;
+        }
+
+        public SqlBuilder<T> WhereInCondition(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, List<object> values)
+        {
+            if (Statement.ToString().LastIndexOf("WHERE", StringComparison.Ordinal) == -1)
+                Statement.AppendLine("WHERE");
+
+            if (conditionRelation != ConditionRelation.NULL)
+                Statement.Append($"{conditionRelation} ");
+
+            var propertyValue = GetPropertyByExpress(EntityContext, expr);
+
+            List<string> parameter = new List<string>();
+
+            for (var i = 0; i < values.Count; i++)
+            {
+                var filedName = $"{ParameterToken}{EntityContext.TableName}_{propertyValue.PropertyName}{i}";
+                parameter.Add(filedName);
+                SqlParameterList.Add(new SqlParameter(filedName, values[i]));
+            }
+
+            Statement.AppendLine($" {propertyValue.PropertyName} IN ({string.Join(",", parameter)})");
 
             return this;
         }
 
-        public SqlBuilder<T> WhereNotInCondition<TType>(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, ConditionOperator conditionOperator, List<TType> value)
+        public SqlBuilder<T> WhereNotInCondition(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, List<object> values)
         {
-            if (SqlStatement.ToString().LastIndexOf("WHERE", StringComparison.Ordinal) == -1)
-                SqlStatement.AppendLine("WHERE");
+            if (Statement.ToString().LastIndexOf("WHERE", StringComparison.Ordinal) == -1)
+                Statement.AppendLine("WHERE");
 
             if (conditionRelation != ConditionRelation.NULL)
-                SqlStatement.Append($"{conditionRelation} ");
+                Statement.Append($"{conditionRelation} ");
 
             var propertyValue = GetPropertyByExpress(EntityContext, expr);
+            var parameter = new List<string>();
 
-            SqlStatement.Append($" {propertyValue.PropertyName} NOT IN (");
-
-            for (var i = 0; i < value.Count; i++)
+            for (var i = 0; i < values.Count; i++)
             {
-                var filedName = ParameterToken + EntityContext.TableName + "_" + propertyValue.PropertyName + i;
-                SqlStatement.Append(filedName);
-                SqlParameterList.Add(new SqlParameter(filedName, value[i]));
+                var filedName = $"{ParameterToken}{EntityContext.TableName}_{propertyValue.PropertyName}{i}";
+                parameter.Add(filedName);
+                SqlParameterList.Add(new SqlParameter(filedName, values[i]));
             }
 
-            SqlStatement.AppendLine(")");
+            Statement.AppendLine($" {propertyValue.PropertyName} NOT IN ({string.Join(",", parameter)})");
 
             return this;
         }
 
         public SqlBuilder<T> OrderBy(Expression<Func<T, object>> expr, OrderByEnums orderBy)
         {
-            if (SqlStatement.ToString().LastIndexOf("ORDER BY", StringComparison.Ordinal) == -1)
-                SqlStatement.Append("ORDER BY ");
-
             var propertyValue = GetPropertyByExpress(EntityContext, expr);
 
-            SqlStatement.AppendLine($"{propertyValue.PropertyName} {orderBy}");
-
-            return this;
-        }
-
-        public SqlBuilder<T> GroupBy(Expression<Func<T, object>> expr)
-        {
-            if (SqlStatement.ToString().LastIndexOf("GROUP BY", StringComparison.Ordinal) == -1)
-                SqlStatement.Append("GROUP BY ");
-            
-            var propertyValue = GetPropertyByExpress(EntityContext, expr);
-
-            SqlStatement.AppendLine($"{propertyValue.PropertyName}");
+            Statement.AppendLine($"ORDER BY {propertyValue.PropertyName} {orderBy}");
 
             return this;
         }
 
         public SqlBuilder<T> Builder()
         {
-            if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
-                SqlStatement.Append(";");
+            //if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
+                Statement.Append(';');
 
             return this;
         }
 
         private static EntityPropertyValue GetPropertyByExpress(EntityContext entityContext, Expression<Func<T, object>> expr)
         {
-            var propertyName = "";
+            var propertyName = string.Empty;
             if (expr.Body is UnaryExpression)
             {
                 var uy = expr.Body as UnaryExpression;
@@ -243,9 +255,10 @@ namespace Mustang.SqlBuilder
             return property;
         }
 
+
         private static EntityPropertyValue GetJoinTablePropertyByExpress<TJoinTable>(EntityContext entityContext, Expression<Func<TJoinTable, object>> expression)
         {
-            string propertyName;
+            var propertyName = string.Empty;
             if (expression.Body is UnaryExpression)
             {
                 var uy = expression.Body as UnaryExpression;
@@ -317,21 +330,21 @@ namespace Mustang.SqlBuilder
                 case ConditionOperator.EqualTo:
                     condition = $" {joinTableName}.{joinFiledName} = {relationTableName}.{relationFileName}";
                     break;
-                    //case ConditionOperator.NotEqualTo:
-                    //    condition = $" {joinTableName}.{joinFiledName} <> {relationTableName}.{relationFileName}";
-                    //    break;
-                    //case ConditionOperator.GreaterThan:
-                    //    condition = $" {joinTableName}.{joinFiledName} > {relationTableName}.{relationFileName}";
-                    //    break;
-                    //case ConditionOperator.GreaterThanOrEqualTo:
-                    //    condition = $" {joinTableName}.{joinFiledName} >= {relationTableName}.{relationFileName}";
-                    //    break;
-                    //case ConditionOperator.LessThan:
-                    //    condition = $" {joinTableName}.{joinFiledName} < {relationTableName}.{relationFileName}";
-                    //    break;
-                    //case ConditionOperator.LessThanOrEqualTo:
-                    //    condition = $" {joinTableName}.{joinFiledName} <= {relationTableName}.{relationFileName}";
-                    //    break;
+                case ConditionOperator.NotEqualTo:
+                    condition = $" {joinTableName}.{joinFiledName} <> {relationTableName}.{relationFileName}";
+                    break;
+                case ConditionOperator.GreaterThan:
+                    condition = $" {joinTableName}.{joinFiledName} > {relationTableName}.{relationFileName}";
+                    break;
+                case ConditionOperator.GreaterThanOrEqualTo:
+                    condition = $" {joinTableName}.{joinFiledName} >= {relationTableName}.{relationFileName}";
+                    break;
+                case ConditionOperator.LessThan:
+                    condition = $" {joinTableName}.{joinFiledName} < {relationTableName}.{relationFileName}";
+                    break;
+                case ConditionOperator.LessThanOrEqualTo:
+                    condition = $" {joinTableName}.{joinFiledName} <= {relationTableName}.{relationFileName}";
+                    break;
             }
             return condition;
         }
