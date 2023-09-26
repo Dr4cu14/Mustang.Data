@@ -20,7 +20,7 @@ public class ConnectionStringManager
 
 
         if (builder == null)
-            throw new FileNotFoundException("appstrings.json cannot be found");
+            throw new FileNotFoundException("this appsettings.json cannot be found");
 
 
         var defaultSection1 = builder.GetSection("Mustang:DBConnectionStrings").Get<List<ConnectionStringConfig>>();
