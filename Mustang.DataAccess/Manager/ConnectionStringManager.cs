@@ -27,11 +27,13 @@ public class ConnectionStringManager
 
         var defaultSection = builder.GetSection(GlobalSettings.DefaultSection);
         if (defaultSection == null)
-            throw new KeyNotFoundException("this default section cannot be found");
+            throw new KeyNotFoundException("default key cannot be found");
 
         foreach (var item in GlobalSettings.DefaultConnectionStringKey)
         {
             var connectionStrList = defaultSection.GetSection(item).Get<List<ConnectionStringConfig>>();
+            if (connectionStrList==null || !connectionStrList.Any() || connectionStrList.Count==0)
+                throw new KeyNotFoundException($"this key {item} cannot be found");
 
             ConnectionStringConfigs.AddRange(connectionStrList);
         }
