@@ -7,17 +7,17 @@ using Mustang.BuilderSql;
 
 namespace Mustang.SqlBuilder
 {
-    public abstract class SqlBuilder<T> where T : class, new()
+    public abstract class SqlBuilder<T> : ISqlBuilder where T : class
     {
-        public string Sql => Statement.ToString();
+        public string Sql { get; set; } = string.Empty;
+
+        public List<SqlParameter> SqlParameters { get; set; } = new();
 
         protected EntityContext EntityContext;
 
-        protected readonly StringBuilder Statement = new();
-
-        public readonly List<SqlParameter> SqlParameterList = new();
-
         protected static string ParameterToken => "@";
+
+        protected StringBuilder Statement = new();
 
         public virtual SqlBuilder<T> ReturnId()
         {
@@ -26,7 +26,7 @@ namespace Mustang.SqlBuilder
 
         public SqlBuilder<T> Exists(string columnName)
         {
-            Statement.AppendLine($"SELECT {EntityContext.TableName}.{columnName} FROM {EntityContext.FullNameTableName} ");
+            Statement.AppendLine($"SELECT {EntityContext.TableName}.{columnName} FROM {EntityContext.FullNameTableName}");
 
             return this;
         }
@@ -46,10 +46,10 @@ namespace Mustang.SqlBuilder
                 columnNames.Add(propertyValue.PropertyName);
                 values.Add($"{ParameterToken}{propertyValue.PropertyName}");
 
-                SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
+                SqlParameters.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-            Statement.AppendLine($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
+            Statement.AppendLine($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)})");
 
             return this;
         }
@@ -67,7 +67,7 @@ namespace Mustang.SqlBuilder
 
                 columnNames.Add($"{propertyValue.PropertyName} = {ParameterToken}{propertyValue.PropertyName}");
 
-                SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
+                SqlParameters.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
             Statement.AppendLine($"UPDATE {EntityContext.FullNameTableName} SET {string.Join(",", columnNames)}");
@@ -96,6 +96,15 @@ namespace Mustang.SqlBuilder
             }
 
             Statement.AppendLine($"SELECT {string.Join(",", columnNames)} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
+
+            return this;
+        }
+
+        public SqlBuilder<T> Query(string selectColumn)
+        {
+            EntityContext = EntityHelper.GetEntityContext(default(T));
+
+            Statement.AppendLine($@"SELECT {selectColumn} FROM {EntityContext.FullNameTableName} {EntityContext.TableName}");
 
             return this;
         }
@@ -149,18 +158,19 @@ namespace Mustang.SqlBuilder
             var relationEntityContext = EntityHelper.GetEntityContext(default(TRelationTable));
             var relationTableProperty = GetJoinTablePropertyByExpress(relationEntityContext, relationoinExpression);
 
-            Statement.Append($" {ConditionRelation.AND} {JoinConditionBuilder(joinEntityContext.TableName, joinExpressionProperty.PropertyName, conditionOperator, relationEntityContext.TableName, relationTableProperty.PropertyName)}");
+            Statement.AppendLine($" {ConditionRelation.AND} {JoinConditionBuilder(joinEntityContext.TableName, joinExpressionProperty.PropertyName, conditionOperator, relationEntityContext.TableName, relationTableProperty.PropertyName)}");
 
             return this;
         }
 
+
         public SqlBuilder<T> WhereCondition(ConditionRelation conditionRelation, Expression<Func<T, object>> expr, ConditionOperator conditionOperator, object value = null)
         {
-            if (conditionRelation==ConditionRelation.NULL)
+            if (conditionRelation == ConditionRelation.NULL)
                 Statement.AppendLine(" WHERE ");
 
             if (conditionRelation != ConditionRelation.NULL)
-                Statement.Append($"{conditionRelation} ");
+                Statement.AppendLine($"{conditionRelation} ");
 
             var propertyValue = GetPropertyByExpress(EntityContext, expr);
 
@@ -169,7 +179,29 @@ namespace Mustang.SqlBuilder
             if (value != null)
             {
                 var filedName = $"{ParameterToken}{EntityContext.TableName}_{propertyValue.PropertyName}";
-                SqlParameterList.Add(new SqlParameter(filedName, value));
+                SqlParameters.Add(new SqlParameter(filedName, value));
+            }
+
+            return this;
+        }
+
+        public SqlBuilder<T> WhereCondition<TTable>(ConditionRelation conditionRelation, Expression<Func<TTable, object>> expr, ConditionOperator conditionOperator, object value = null)
+        {
+            if (conditionRelation == ConditionRelation.NULL)
+                Statement.AppendLine(" WHERE ");
+
+            if (conditionRelation != ConditionRelation.NULL)
+                Statement.AppendLine($"{conditionRelation} ");
+
+            var relationEntityContext = EntityHelper.GetEntityContext(default(TTable));
+            var propertyValue = GetJoinTablePropertyByExpress(relationEntityContext, expr);
+
+            Statement.AppendLine(ConditionBuilder(conditionOperator, relationEntityContext.TableName, propertyValue.PropertyName));
+
+            if (value != null)
+            {
+                var filedName = $"{ParameterToken}{relationEntityContext.TableName}_{propertyValue.PropertyName}";
+                SqlParameters.Add(new SqlParameter(filedName, value));
             }
 
             return this;
@@ -181,7 +213,7 @@ namespace Mustang.SqlBuilder
                 Statement.AppendLine("WHERE");
 
             if (conditionRelation != ConditionRelation.NULL)
-                Statement.Append($"{conditionRelation} ");
+                Statement.AppendLine($"{conditionRelation} ");
 
             var propertyValue = GetPropertyByExpress(EntityContext, expr);
 
@@ -191,7 +223,7 @@ namespace Mustang.SqlBuilder
             {
                 var filedName = $"{ParameterToken}{EntityContext.TableName}_{propertyValue.PropertyName}{i}";
                 parameter.Add(filedName);
-                SqlParameterList.Add(new SqlParameter(filedName, values[i]));
+                SqlParameters.Add(new SqlParameter(filedName, values[i]));
             }
 
             Statement.AppendLine($" {propertyValue.PropertyName} IN ({string.Join(",", parameter)})");
@@ -205,7 +237,7 @@ namespace Mustang.SqlBuilder
                 Statement.AppendLine("WHERE");
 
             if (conditionRelation != ConditionRelation.NULL)
-                Statement.Append($"{conditionRelation} ");
+                Statement.AppendLine($"{conditionRelation} ");
 
             var propertyValue = GetPropertyByExpress(EntityContext, expr);
             var parameter = new List<string>();
@@ -214,7 +246,7 @@ namespace Mustang.SqlBuilder
             {
                 var filedName = $"{ParameterToken}{EntityContext.TableName}_{propertyValue.PropertyName}{i}";
                 parameter.Add(filedName);
-                SqlParameterList.Add(new SqlParameter(filedName, values[i]));
+                SqlParameters.Add(new SqlParameter(filedName, values[i]));
             }
 
             Statement.AppendLine($" {propertyValue.PropertyName} NOT IN ({string.Join(",", parameter)})");
@@ -234,7 +266,9 @@ namespace Mustang.SqlBuilder
         public SqlBuilder<T> Builder()
         {
             //if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
-                Statement.Append(';');
+            Statement.AppendLine(";");
+
+            Sql = Statement.ToString();
 
             return this;
         }
@@ -351,6 +385,5 @@ namespace Mustang.SqlBuilder
             }
             return condition;
         }
-
     }
 }

@@ -1,142 +1,105 @@
-﻿using Mustang.DataAccess.Connection;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Collections.Generic;
 using Mustang.SqlBuilder;
+using System.Threading.Tasks;
 
 namespace Mustang.DataAccess
 {
-    public class MustangDataAccess
+    public static class DataAccess
     {
-        private static ConnectionStringConfig GetConnectionConfig(string connectionStringName)
+        public static TResult ExecuteScalar<TResult>(ISqlBuilder sqlBuilder, string connectionName = null!)
         {
-            var connectionConfig = !string.IsNullOrWhiteSpace(connectionStringName)
-                ? ConnectionStringConfiguration.GetConnectionStringConfig(connectionStringName)
-                : ConnectionStringConfiguration.GetConnectionStringConfig();
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
 
-            if (connectionConfig == null)
-                throw new ArgumentNullException(nameof(connectionStringName));
+            var database = DatabaseManager.GetDatabase(connectionConfig);
 
-            return connectionConfig;
+            var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
+
+            var result = database.ExecuteScalar<TResult>(command);
+
+            return result;
         }
 
-        private static Database GetDatabase(ConnectionStringConfig connectionStringConfig)
+        public static TResult ExecuteScalar<TResult>(string sql, List<SqlParameter> sqlParameters = null!, string connectionName = null!)
         {
-            if (connectionStringConfig == null)
-                throw new ArgumentNullException(nameof(connectionStringConfig));
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
 
-            return new Database(connectionStringConfig.ConnectionString, connectionStringConfig.ProviderName);
+            var database = DatabaseManager.GetDatabase(connectionConfig);
+
+            var command = database.CreateCommand(sql, sqlParameters);
+
+            var result = database.ExecuteScalar<TResult>(command);
+
+            return result;
         }
 
-        public static int ExecuteScalar<T>(SqlBuilder<T> sqlBuilder, string connectionName = null) where T : class, new()
+        public static int ExecuteNonQuery(ISqlBuilder sqlBuilder, string? connectionName = null)
         {
-            var connectionConfig = GetConnectionConfig(connectionName);
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
 
-            var database = GetDatabase(connectionConfig);
+            var database = DatabaseManager.GetDatabase(connectionConfig);
 
-            var command = database.CreateCommand(sqlBuilder.Sql);
-
-            foreach (var databaseParameter in sqlBuilder.SqlParameterList)
-            {
-                database.AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
-            }
-
-            return Convert.ToInt32(database.ExecuteScalar(command));
-        }
-
-        public static int ExecuteNonQuery<T>(SqlBuilder<T> sqlBuilder, string connectionName = null) where T : class, new()
-        {
-            var connectionConfig = GetConnectionConfig(connectionName);
-
-            var database = GetDatabase(connectionConfig);
-
-            var command = database.CreateCommand(sqlBuilder.Sql);
-
-            foreach (var databaseParameter in sqlBuilder.SqlParameterList)
-            {
-                database.AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
-            }
+            var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
 
             return database.ExecuteNonQuery(command);
         }
 
-        public static T ExecuteReader<T>(SqlBuilder<T> sqlBuilder, string connectionName = null) where T : class, new()
+        public static int ExecuteNonQuery(string sql, List<SqlParameter> sqlParameters = null!, string connectionName = null!)
         {
-            var connectionConfig = GetConnectionConfig(connectionName);
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
 
-            var database = GetDatabase(connectionConfig);
+            var database = DatabaseManager.GetDatabase(connectionConfig);
 
-            var command = database.CreateCommand(sqlBuilder.Sql);
+            var command = database.CreateCommand(sql, sqlParameters);
 
-            foreach (var databaseParameter in sqlBuilder.SqlParameterList)
-            {
-                database.AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
-            }
+            return database.ExecuteNonQuery(command);
+        }
+
+        public static Task<int> ExecuteNonQueryAsync(ISqlBuilder sqlBuilder, string? connectionName = null)
+        {
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
+
+            var database = DatabaseManager.GetDatabase(connectionConfig);
+
+            var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
+
+            return database.ExecuteNonQueryAsync(command);
+        }
+
+        public static TResult ExecuteReader<TResult>(ISqlBuilder sqlBuilder, string connectionName = null!) where TResult : class, new()
+        {
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
+
+            var database = DatabaseManager.GetDatabase(connectionConfig);
+
+            var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
 
             var reader = database.ExecuteReader(command);
 
-
-            return reader.ToEntity<T>();
+            return reader.ToEntity<TResult>();
         }
 
-        public static List<T> ExecuteReaderList<T>(SqlBuilder<T> sqlBuilder, string connectionName = null) where T : class, new()
+        public static List<T> ExecuteReaderList<T>(ISqlBuilder sqlBuilder, string connectionName = null!) where T : class, new()
         {
-            var connectionConfig = GetConnectionConfig(connectionName);
+            var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
 
-            var database = GetDatabase(connectionConfig);
+            var database = DatabaseManager.GetDatabase(connectionConfig);
 
-            var command = database.CreateCommand(sqlBuilder.Sql);
-
-            foreach (var databaseParameter in sqlBuilder.SqlParameterList)
-            {
-                database.AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
-            }
+            var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
 
             var reader = database.ExecuteReader(command);
 
             return reader.ToEntityList<T>();
         }
 
-        public static DataSet ExecuteDataSet<T>(SqlBuilder<T> sqlBuilder, string connectionName = null) where T : class, new()
-        {
-            var connectionConfig = GetConnectionConfig(connectionName);
-
-            var database = GetDatabase(connectionConfig);
-
-            var command = database.CreateCommand(sqlBuilder.Sql);
-
-            foreach (var databaseParameter in sqlBuilder.SqlParameterList)
-            {
-                database.AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
-            }
-
-            return database.ExecuteDataSet(command);
-        }
-
-        //public static List<TResult> QueryPaging<TEntity, TResult>(SqlBuilder<TEntity> sqlBuilder, out int totalCount, string connectionName = null) where TEntity : class, new() where TResult : class, new()
+        //public static DataSet ExecuteDataSet<T>(ISqlBuilder sqlBuilder, string? connectionName = null) where T : class, new()
         //{
-        //    totalCount = 0;
+        //    var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
 
-        //    var connectionConfig = GetConnectionConfig(connectionName);
+        //    var database = DatabaseManager.GetDatabase(connectionConfig);
 
-        //    var database = GetDatabase(connectionConfig);
+        //    var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
 
-        //    var command = database.CreateCommand(sqlBuilder.Sql);
-
-        //    foreach (var databaseParameter in sqlBuilder.SqlParameterList)
-        //    {
-        //        database.AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
-        //    }
-
-        //    var dataSet = database.ExecuteDataSet(command);
-        //    if (dataSet != null && dataSet.Tables.Count == 2)
-        //    {
-        //        totalCount = Convert.ToInt32(dataSet.Tables[0].Rows[0][0].ToString());
-        //        return dataSet.Tables[0].ToEntityList<TResult>();
-        //    }
-
-        //    return null;
+        //    return database.ExecuteDataSet(command);
         //}
     }
 }

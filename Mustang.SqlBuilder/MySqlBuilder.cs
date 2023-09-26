@@ -13,8 +13,6 @@ namespace Mustang.SqlBuilder
             return this;
         }
 
-
-
         //public override SqlBuilder<T> Query(int pageIndex, int pageSize)
         //{
         //    var columnNames = new List<string>();

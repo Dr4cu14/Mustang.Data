@@ -1,11 +1,49 @@
 ﻿{
-  "connnections": {
-    "commondb": {
-      "Master": "",
-      "Salve": [
-        "123",
-        "123"
-      ]
-    }
+  "Mustang": {
+    "DBConnectionStrings": [
+      {
+        "ConnectionName": "common",
+        "ProviderName": "MySql",
+        "MasterConnectionString": "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+        "SalveConnectionStrings": [
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;"
+        ]
+      },
+      {
+        "ConnectionName": "ebsbasicdb",
+        "ProviderName": "MySql",
+        "MasterConnectionString": "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+        "SalveConnectionStrings": [
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;",
+          "Server=localhost;User ID=yc;Password=Aa123456;database=ebsbasicdb;Charset=utf8mb4;Allow User Variables=True;sslMode=None;"
+        ]
+      }
+    ],
+    "TDengineConnectionStrings": [
+      {
+        "ConnectionName": "common",
+        "ProviderName": "TDengine",
+        "MasterConnectionString": "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26",
+        "SalveConnectionStrings": [
+          "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26",
+          "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26",
+          "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26"
+        ]
+      },
+      {
+        "ConnectionName": "TDengine1",
+        "ProviderName": "TDengine",
+        "MasterConnectionString": "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26",
+        "SalveConnectionStrings": [
+          "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26",
+          "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26",
+          "Host=yangchuan-virtual-machine;Port=6030;Username=root;Password=taosdata;Database=ebs26"
+        ]
+      }
+    ]
   }
 }

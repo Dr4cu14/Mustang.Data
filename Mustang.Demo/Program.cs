@@ -42,11 +42,11 @@ Console.WriteLine(builderSql6.Sql);
 Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ffffff"));
 
 Console.WriteLine("MySQL");
-//Console.WriteLine(builderSql1.Sql);
-//Console.WriteLine(builderSql2.Sql);
-//Console.WriteLine(builderSql3.Sql);
-//Console.WriteLine(builderSql4.Sql);
-//Console.WriteLine(builderSql5.Sql);
+Console.WriteLine(builderSql1.Sql);
+Console.WriteLine(builderSql2.Sql);
+Console.WriteLine(builderSql3.Sql);
+Console.WriteLine(builderSql4.Sql);
+Console.WriteLine(builderSql5.Sql);
 
 
 //var success = MustangDataAccess.ExecuteNonQuery(builderSql1);

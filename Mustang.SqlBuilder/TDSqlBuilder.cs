@@ -42,7 +42,7 @@ namespace Mustang.SqlBuilder
                 if (valueType == System.Data.DbType.Int32)
                     values.Add($"{propertyValue.PropertyValue}");
 
-                SqlParameterList.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
+                SqlParameters.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
 

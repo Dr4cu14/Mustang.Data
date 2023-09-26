@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Transactions;
+using Mustang.SqlBuilder;
 
 namespace Mustang.DataAccess
 {
@@ -12,26 +16,36 @@ namespace Mustang.DataAccess
 
         internal DbProviderFactory DbProviderFactory { get; set; }
 
-        internal Database(string connectionString, string provdierName)
+        internal Database(string connectionString, string providerName)
         {
             if (string.IsNullOrEmpty(connectionString))
                 throw new ArgumentException(nameof(connectionString));
 
             ConnectionString = connectionString;
-            DbProviderFactory = ProviderFactory.GetDbProviderFactory(provdierName);
+            DbProviderFactory = ProviderFactory.GetDbProviderFactory(providerName);
         }
 
-        public DbCommand CreateCommand(string commandText)
+        public DbCommand CreateCommand(string commandText, List<SqlParameter>? sqlParameters = null)
         {
             if (string.IsNullOrWhiteSpace(commandText))
-                throw new ArgumentException("SQL");
+                throw new ArgumentException("commandText");
 
             var command = DbProviderFactory.CreateCommand();
             command.CommandType = CommandType.Text;
             command.CommandText = commandText;
 
+            if (sqlParameters != null && sqlParameters.Any())
+            {
+                foreach (var databaseParameter in sqlParameters)
+                {
+                    AddInParameter(command, databaseParameter.ColumnName, databaseParameter.DbType, databaseParameter.Value);
+                }
+            }
+
             return command;
         }
+
+
         public virtual void AddInParameter(DbCommand command, string name, DbType dbType, object value)
         {
             if (command == null)
@@ -49,58 +63,82 @@ namespace Mustang.DataAccess
             command.Parameters.Add(parameter);
         }
 
-        public object ExecuteScalar(DbCommand command)
+        public T? ExecuteScalar<T>(DbCommand command)
         {
-            if (command == null) throw new ArgumentNullException(nameof(command));
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
 
-            using (var wrapper = GetOpenConnection())
-            {
-                PrepareCommand(command, wrapper.Connection);
-                return command.ExecuteScalar();
-            }
+            using var wrapper = GetOpenConnection();
+            PrepareCommand(command, wrapper.Connection);
+            var result = command.ExecuteScalar();
+
+            return result == null ? default : (T)result;
         }
+
+        //public Task<T?> ExecuteScalarAsync<T>(DbCommand command)
+        //{
+        //    if (command == null)
+        //        throw new ArgumentNullException(nameof(command));
+
+        //    using var wrapper = GetOpenConnection();
+        //    PrepareCommand(command, wrapper.Connection);
+        //    var result = command.ExecuteScalarAsync();
+
+        //    return Task.FromResult<T?>(result);
+        //}
 
         public int ExecuteNonQuery(DbCommand command)
         {
-            using (var wrapper = GetOpenConnection())
-            {
-                PrepareCommand(command, wrapper.Connection);
-                return command.ExecuteNonQuery();
-            }
+            using var wrapper = GetOpenConnection();
+            PrepareCommand(command, wrapper.Connection);
+            return command.ExecuteNonQuery();
+        }
+
+        public Task<int> ExecuteNonQueryAsync(DbCommand command)
+        {
+            using var wrapper = GetOpenConnection();
+            PrepareCommand(command, wrapper.Connection);
+            return command.ExecuteNonQueryAsync();
         }
 
         public DataSet ExecuteDataSet(DbCommand command)
         {
-            var dataSet = new DataSet {Locale = CultureInfo.InvariantCulture};
-            using (var wrapper = GetOpenConnection())
-            using (var adapter = DbProviderFactory.CreateDataAdapter())
-            {
-                PrepareCommand(command, wrapper.Connection);
-                if (adapter != null)
-                {
-                    adapter.SelectCommand = command;
+            var dataSet = new DataSet { Locale = CultureInfo.InvariantCulture };
 
-                    adapter.Fill(dataSet);
-                }
-            }
+            using var wrapper = GetOpenConnection();
+
+            using var adapter = DbProviderFactory.CreateDataAdapter();
+
+            PrepareCommand(command, wrapper.Connection);
+
+            if (adapter == null)
+                return dataSet;
+
+            adapter.SelectCommand = command;
+
+            adapter.Fill(dataSet);
+
             return dataSet;
         }
 
         public IDataReader ExecuteReader(DbCommand command)
         {
-            using (var wrapper = GetOpenConnection())
-            {
-                PrepareCommand(command, wrapper.Connection);
-                var cmdBehavior = Transaction.Current == null ? CommandBehavior.CloseConnection : CommandBehavior.Default;
-                IDataReader realReader = command.ExecuteReader(cmdBehavior);
-                return new RefCountingDataReader(wrapper, realReader);
-            }
+            using var wrapper = GetOpenConnection();
+
+            PrepareCommand(command, wrapper.Connection);
+
+            var cmdBehavior = Transaction.Current == null ? CommandBehavior.CloseConnection : CommandBehavior.Default;
+
+            IDataReader realReader = command.ExecuteReader(cmdBehavior);
+
+            return new RefCountingDataReader(wrapper, realReader);
         }
 
         private void PrepareCommand(DbCommand command, DbConnection connection)
         {
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
+
             if (connection == null)
                 throw new ArgumentNullException(nameof(connection));
 
@@ -112,7 +150,9 @@ namespace Mustang.DataAccess
         private DatabaseConnectionWrapper GetOpenConnection()
         {
             var connection = TransactionScopeConnections.GetConnection(this);
+
             return connection ?? GetWrappedConnection();
+
         }
 
         private DatabaseConnectionWrapper GetWrappedConnection()
@@ -150,6 +190,7 @@ namespace Mustang.DataAccess
 
 
         #endregion
+
 
     }
 }
