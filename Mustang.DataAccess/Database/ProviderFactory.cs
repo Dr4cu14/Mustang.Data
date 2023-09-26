@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Data.Common;
 using System.Data.SqlClient;
-using MySql;
 using MySql.Data.MySqlClient;
 
 namespace Mustang.DataAccess
@@ -22,6 +21,10 @@ namespace Mustang.DataAccess
                 case "MySql":
                     factory = MySqlClientFactory.Instance;
                     break;
+
+                //case "TDEngine":
+                //    factory = MySqlClientFactory.Instance;
+                //    break;
 
 
                 default:
