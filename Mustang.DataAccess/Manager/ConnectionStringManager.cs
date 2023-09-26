@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System;
@@ -23,24 +22,27 @@ public class ConnectionStringManager
         if (builder == null)
             throw new FileNotFoundException("appstrings.json cannot be found");
 
+
+        var defaultSection1 = builder.GetSection("Mustang:DBConnectionStrings").Get<List<ConnectionStringConfig>>();
+
         var defaultSection = builder.GetSection(GlobalSettings.DefaultSection);
-        if (defaultSection==null)
+        if (defaultSection == null)
             throw new KeyNotFoundException("this default section cannot be found");
 
         foreach (var item in GlobalSettings.DefaultConnectionStringKey)
         {
-            var connectionStrList= defaultSection.Get<List<ConnectionStringConfig>>();
+            var connectionStrList = defaultSection.GetSection(item).Get<List<ConnectionStringConfig>>();
 
             ConnectionStringConfigs.AddRange(connectionStrList);
         }
 
 
-        if (ConnectionStringConfigs == null || !ConnectionStringConfigs.Any() || ConnectionStringConfigs.Count==0)
+        if (ConnectionStringConfigs == null || !ConnectionStringConfigs.Any() || ConnectionStringConfigs.Count == 0)
             throw new KeyNotFoundException("this ConnectionStrings cannot be found");
 
     }
 
-    public static ConnectionStringConfig GetConnectionStringConfig(string connectionName= "common")
+    public static ConnectionStringConfig GetConnectionStringConfig(string connectionName = "common")
     {
         var connectionStringConfig = ConnectionStringConfigs.FirstOrDefault(w => w.ConnectionName == connectionName);
 
@@ -49,4 +51,5 @@ public class ConnectionStringManager
 
         return connectionStringConfig;
     }
+
 }

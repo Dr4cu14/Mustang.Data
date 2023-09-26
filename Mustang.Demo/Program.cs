@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Mustang.DataAccess;
 
 var entity = new Account() { Username = "杨川", Password = "123456", InDate = DateTime.Now };
 //var entity2 = new RoleAccount() { Username = "杨川", Password = "123456", InDate = DateTime.Now };
@@ -49,7 +50,7 @@ Console.WriteLine(builderSql4.Sql);
 Console.WriteLine(builderSql5.Sql);
 
 
-//var success = MustangDataAccess.ExecuteNonQuery(builderSql1);
+var success = DataAccess.ExecuteNonQuery(builderSql1);
 
 
 StackTrace st = new StackTrace(skipFrames: 1, fNeedFileInfo: true);

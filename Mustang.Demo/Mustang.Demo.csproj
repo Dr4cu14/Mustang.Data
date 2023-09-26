@@ -11,4 +11,10 @@
     <ProjectReference Include="..\Mustang.SqlBuilder\Mustang.SqlBuilder.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="appstrings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
