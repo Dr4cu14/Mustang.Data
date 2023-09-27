@@ -7,6 +7,17 @@ namespace Mustang.DataAccess
 {
     public static class ExecuteExtension
     {
+        public static T ToProgramType<T>(this object? value)
+        {
+            if (value == null || value == DBNull.Value)
+                return default;
+
+            if (value is T newValue)
+                return newValue;
+
+            return default;
+        }
+
         public static T ToEntity<T>(this IDataReader dataReader) where T : class, new()
         {
             var entity = new T();

@@ -16,7 +16,7 @@ namespace Mustang.DataAccess
 
             var result = database.ExecuteScalar<TResult>(command);
 
-            return result;
+            return result.ToProgramType<TResult>();
         }
 
         public static TResult ExecuteScalar<TResult>(string sql, List<SqlParameter> sqlParameters = null!, string connectionName = null!)
@@ -29,7 +29,7 @@ namespace Mustang.DataAccess
 
             var result = database.ExecuteScalar<TResult>(command);
 
-            return result;
+            return result.ToProgramType<TResult>();
         }
 
         public static int ExecuteNonQuery(ISqlBuilder sqlBuilder, string? connectionName = null)
@@ -90,16 +90,5 @@ namespace Mustang.DataAccess
 
             return reader.ToEntityList<T>();
         }
-
-        //public static DataSet ExecuteDataSet<T>(ISqlBuilder sqlBuilder, string? connectionName = null) where T : class, new()
-        //{
-        //    var connectionConfig = ConnectionStringManager.GetConnectionStringConfig(connectionName);
-
-        //    var database = DatabaseManager.GetDatabase(connectionConfig);
-
-        //    var command = database.CreateCommand(sqlBuilder.Sql, sqlBuilder.SqlParameters);
-
-        //    return database.ExecuteDataSet(command);
-        //}
     }
 }
