@@ -66,7 +66,6 @@ public class Logger : ILogger
     }
 
 
-
     private static string serverIp;
     private string GetServerIp()
     {
