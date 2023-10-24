@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mustang.SqlBuilder
 {
-    internal class TDSqlBuilder<T> : SqlBuilder<T> where T : class, new()
+    public class TDSqlBuilder<T> : SqlBuilder<T> where T : class, new()
     {
         private readonly string _dynamicTableName;
 
@@ -34,10 +34,21 @@ namespace Mustang.SqlBuilder
 
                 columnNames.Add(propertyValue.PropertyName);
 
-                var valueType = Transfer2DbType.TransferToTdDataType(propertyValue.PropertyValue);
+                var valueType = Transfer2DbType.TransferToTDDataType(propertyValue.PropertyValue);
 
                 if (valueType == System.Data.DbType.String)
-                    values.Add($"'{propertyValue.PropertyValue}'");
+                {
+                    if (propertyValue.PropertyName == "ts" && propertyValue.PropertyValue.ToString() == "NOW()")
+                    {
+                        values.Add($"{propertyValue.PropertyValue}");
+                    }
+                    else
+                    {
+                        values.Add($"'{propertyValue.PropertyValue}'");
+                    }
+                }
+
+
 
                 if (valueType == System.Data.DbType.Int32)
                     values.Add($"{propertyValue.PropertyValue}");
@@ -45,8 +56,7 @@ namespace Mustang.SqlBuilder
                 SqlParameters.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-
-            Statement.AppendLine($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
+            Statement.Append($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)})");
 
             return this;
         }

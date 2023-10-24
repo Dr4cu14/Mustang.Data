@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Mustang.Common\Mustang.Common.csproj" />
     <ProjectReference Include="..\Mustang.SqlBuilder\Mustang.SqlBuilder.csproj" />
   </ItemGroup>
 

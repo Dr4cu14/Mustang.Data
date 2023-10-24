@@ -7,7 +7,7 @@ public class DataAccessException : ApplicationException
 {
 
     public DataAccessException(
-        Exception ex,
+        System.Exception ex,
         string connectionStr,
         string sqlText,
         params DbParameterCollection[] parameters) : base(BuilderMessage(ex.Message, connectionStr, sqlText, parameters), ex)
@@ -30,7 +30,7 @@ public class DataAccessException : ApplicationException
                 {
                     var dbParameter = parameterCollection[0];
                     var valueType = dbParameter.Value is null ? "" : dbParameter.Value.GetType().ToString();
-                    stringBuilder.Append($"{dbParameter.ParameterName} [{dbParameter.DbType}] : {dbParameter.Value} [{valueType}]");
+                    stringBuilder.AppendLine($"{dbParameter.ParameterName} [{dbParameter.DbType}] : {dbParameter.Value} [{valueType}]");
                 }
             }
         }

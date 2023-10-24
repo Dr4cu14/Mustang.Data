@@ -1,11 +1,18 @@
-﻿namespace Mustang.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public class BusinessException : ApplicationException
+namespace Mustang.Common
 {
-    public BusinessException(string message) : base(message)
+    public class BusinessException : ApplicationException
     {
+        public BusinessException(string message) : base(message)
+        {
 
+        }
+
+        
     }
-
-
 }

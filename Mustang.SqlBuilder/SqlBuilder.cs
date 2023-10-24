@@ -49,7 +49,7 @@ namespace Mustang.SqlBuilder
                 SqlParameters.Add(new SqlParameter(propertyValue.PropertyName, propertyValue.PropertyValue));
             }
 
-            Statement.AppendLine($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)})");
+            Statement.AppendLine($"INSERT INTO {EntityContext.FullNameTableName} ({string.Join(",", columnNames)}) VALUES({string.Join(",", values)});");
 
             return this;
         }
@@ -265,10 +265,13 @@ namespace Mustang.SqlBuilder
 
         public SqlBuilder<T> Builder()
         {
-            //if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
-            Statement.AppendLine(";");
-
             Sql = Statement.ToString();
+
+            if (Sql.LastIndexOf(";", StringComparison.Ordinal) == -1)
+                Sql += ";";
+
+
+
 
             return this;
         }

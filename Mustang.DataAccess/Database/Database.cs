@@ -25,7 +25,7 @@ namespace Mustang.DataAccess
             DbProviderFactory = ProviderFactory.GetDbProviderFactory(providerName);
         }
 
-        public DbCommand CreateCommand(string commandText, List<SqlParameter>? sqlParameters = null)
+        internal DbCommand CreateCommand(string commandText, List<SqlParameter>? sqlParameters = null)
         {
             if (string.IsNullOrWhiteSpace(commandText))
                 throw new ArgumentException("commandText");
@@ -46,7 +46,7 @@ namespace Mustang.DataAccess
         }
 
 
-        public virtual void AddInParameter(DbCommand command, string name, DbType dbType, object value)
+        internal virtual void AddInParameter(DbCommand command, string name, DbType dbType, object value)
         {
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
@@ -63,45 +63,43 @@ namespace Mustang.DataAccess
             command.Parameters.Add(parameter);
         }
 
-        public T? ExecuteScalar<T>(DbCommand command)
+        internal object? ExecuteScalar(DbCommand command)
         {
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
 
             using var wrapper = GetOpenConnection();
             PrepareCommand(command, wrapper.Connection);
-            var result = command.ExecuteScalar();
-
-            return result == null ? default : (T)result;
+            return command.ExecuteScalar();
         }
 
-        //public Task<T?> ExecuteScalarAsync<T>(DbCommand command)
-        //{
-        //    if (command == null)
-        //        throw new ArgumentNullException(nameof(command));
+        internal async Task<object?> ExecuteScalarAsync(DbCommand command)
+        {
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
 
-        //    using var wrapper = GetOpenConnection();
-        //    PrepareCommand(command, wrapper.Connection);
-        //    var result = command.ExecuteScalarAsync();
+            using var wrapper = GetOpenConnection();
+            PrepareCommand(command, wrapper.Connection);
+            var result = await command.ExecuteScalarAsync();
 
-        //    return Task.FromResult<T?>(result);
-        //}
+            return result;
+        }
 
-        public int ExecuteNonQuery(DbCommand command)
+        internal int ExecuteNonQuery(DbCommand command)
         {
             using var wrapper = GetOpenConnection();
             PrepareCommand(command, wrapper.Connection);
             return command.ExecuteNonQuery();
         }
 
-        public Task<int> ExecuteNonQueryAsync(DbCommand command)
+        internal Task<int> ExecuteNonQueryAsync(DbCommand command)
         {
             using var wrapper = GetOpenConnection();
             PrepareCommand(command, wrapper.Connection);
             return command.ExecuteNonQueryAsync();
         }
 
-        public DataSet ExecuteDataSet(DbCommand command)
+        internal DataSet ExecuteDataSet(DbCommand command)
         {
             var dataSet = new DataSet { Locale = CultureInfo.InvariantCulture };
 
@@ -121,7 +119,7 @@ namespace Mustang.DataAccess
             return dataSet;
         }
 
-        public IDataReader ExecuteReader(DbCommand command)
+        internal IDataReader ExecuteReader(DbCommand command)
         {
             using var wrapper = GetOpenConnection();
 
@@ -134,7 +132,7 @@ namespace Mustang.DataAccess
             return new RefCountingDataReader(wrapper, realReader);
         }
 
-        private void PrepareCommand(DbCommand command, DbConnection connection)
+        internal void PrepareCommand(DbCommand command, DbConnection connection)
         {
             if (command == null)
                 throw new ArgumentNullException(nameof(command));
@@ -190,7 +188,6 @@ namespace Mustang.DataAccess
 
 
         #endregion
-
 
     }
 }

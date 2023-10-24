@@ -15,9 +15,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mustang.SqlBuilder", "Musta
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{5B4A697E-B290-4E6C-9267-D659537A0111}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mustang.Common", "Mustang.Common\Mustang.Common.csproj", "{DBD7ADBB-AC79-4B47-AB08-CCB8C5F4F6BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mustang.Common", "Mustang.Common\Mustang.Common.csproj", "{DBD7ADBB-AC79-4B47-AB08-CCB8C5F4F6BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mustang.Logger", "Mustang.Logger\Mustang.Logger.csproj", "{89E80418-8CB4-4A1F-9359-E069AA961442}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mustang.Logger", "Mustang.Logger\Mustang.Logger.csproj", "{89E80418-8CB4-4A1F-9359-E069AA961442}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TDEngine", "TDEngine", "{F33AF093-0D3F-4D81-8B8F-C548AF36ABE5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TDengine.Data", "TDengine.Data\TDengine.Data.csproj", "{57BBA8F2-1D1E-4C8A-BCAA-BC0894FECFDF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +53,10 @@ Global
 		{89E80418-8CB4-4A1F-9359-E069AA961442}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89E80418-8CB4-4A1F-9359-E069AA961442}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89E80418-8CB4-4A1F-9359-E069AA961442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57BBA8F2-1D1E-4C8A-BCAA-BC0894FECFDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57BBA8F2-1D1E-4C8A-BCAA-BC0894FECFDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57BBA8F2-1D1E-4C8A-BCAA-BC0894FECFDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57BBA8F2-1D1E-4C8A-BCAA-BC0894FECFDF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -59,6 +67,7 @@ Global
 		{9E5BF9FE-5F4D-4789-BF7C-A817BA535CCC} = {FE41A93E-F6AE-4AB1-A5C6-426BD8E491CE}
 		{DBD7ADBB-AC79-4B47-AB08-CCB8C5F4F6BF} = {5B4A697E-B290-4E6C-9267-D659537A0111}
 		{89E80418-8CB4-4A1F-9359-E069AA961442} = {5B4A697E-B290-4E6C-9267-D659537A0111}
+		{57BBA8F2-1D1E-4C8A-BCAA-BC0894FECFDF} = {F33AF093-0D3F-4D81-8B8F-C548AF36ABE5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {60C10A66-382F-45BE-9253-9BE4F8EC9970}

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Reflection;
 
 namespace Mustang.DataAccess
 {
     public static class ExecuteExtension
     {
+
         public static T ToProgramType<T>(this object? value)
         {
             if (value == null || value == DBNull.Value)
@@ -24,17 +26,22 @@ namespace Mustang.DataAccess
 
             var entityType = typeof(T);
 
+            var propertys = entityType.GetProperties(BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
             while (dataReader.Read())
             {
                 for (var i = 0; i < dataReader.FieldCount; i++)
                 {
-                    var data = dataReader[i];
+                    var columnName = dataReader.GetName(i);
+                    var data = dataReader[columnName];
                     if (data == null || data is DBNull)
                         continue;
 
-                    var propertyInfo = entityType.GetProperty(dataReader.GetName(i), BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-                    propertyInfo.SetValue(entity, CheckType(dataReader[i], propertyInfo.PropertyType), null);
+                    var propertyInfo = propertys.FirstOrDefault(w => w.Name == columnName);
+                    if (propertyInfo != null && propertyInfo.CanWrite)
+                    {
+                        propertyInfo.SetValue(entity, CheckType(data, propertyInfo.PropertyType), null);
+                    }
                 }
             }
             return entity;
@@ -46,36 +53,74 @@ namespace Mustang.DataAccess
 
             var entityType = typeof(T);
 
+            var propertys = entityType.GetProperties(BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
             while (dataReader.Read())
             {
                 var entity = new T();
 
                 for (var i = 0; i < dataReader.FieldCount; i++)
                 {
-                    var data = dataReader[i];
+                    var columnName = dataReader.GetName(i);
+                    var data = dataReader[columnName];
                     if (data == null || data is DBNull)
                         continue;
 
-                    var propertyInfo = entityType.GetProperty(dataReader.GetName(i), BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-                    propertyInfo.SetValue(entity, CheckType(data, propertyInfo.PropertyType), null);
+                    var propertyInfo = propertys.FirstOrDefault(w => w.Name == columnName);
+                    if (propertyInfo != null && propertyInfo.CanWrite)
+                    {
+                        propertyInfo.SetValue(entity, CheckType(data, propertyInfo.PropertyType), null);
+                    }
                 }
+
+                result.Add(entity);
             }
 
             return result;
         }
 
-        private static object CheckType(object value, Type conversionType)
+        public static List<T> ToColumnList<T>(this IDataReader dataReader) where T : struct
         {
-            if (!conversionType.IsGenericType || conversionType.GetGenericTypeDefinition() != typeof(Nullable<>))
-                return Convert.ChangeType(value, conversionType);
+            var result = new List<T>();
 
-            if (value == null)
-                return null;
+            while (dataReader.Read())
+            {
+                var data = dataReader[0];
+                if (data == null || data is DBNull)
+                    continue;
 
-            var nullableConverter = new System.ComponentModel.NullableConverter(conversionType);
-            conversionType = nullableConverter.UnderlyingType;
-            return Convert.ChangeType(value, conversionType);
+                result.Add((T)data);
+            }
+
+            return result;
+        }
+
+
+        public static T ToEntity<T>(this DataTable dataTable) where T : class, new()
+        {
+            var entityType = typeof(T);
+
+            var propertys = entityType.GetProperties(BindingFlags.GetProperty | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+            var row = dataTable.Rows[0];
+
+            var entity = new T();
+
+            for (int i = 0; i < dataTable.Columns.Count; i++)
+            {
+                var columnName = dataTable.Columns[i].ColumnName;
+                var data = row[columnName];
+                if (data == null || data is DBNull)
+                    continue;
+
+                var propertyInfo = propertys.FirstOrDefault(w => w.Name == columnName);
+                if (propertyInfo != null && propertyInfo.CanWrite)
+                {
+                    propertyInfo.SetValue(entity, CheckType(data, propertyInfo.PropertyType), null);
+                }
+            }
+
+            return entity;
         }
 
         public static List<T> ToEntityList<T>(this DataTable dataTable) where T : class, new()
@@ -90,20 +135,67 @@ namespace Mustang.DataAccess
             {
                 var entity = new T();
 
-                foreach (var propertyInfo in propertys)
+                for (int i = 0; i < dataTable.Columns.Count; i++)
                 {
-                    if (dataTable.Columns.Contains(propertyInfo.Name))
+                    var columnName = dataTable.Columns[i].ColumnName;
+                    var data = row[columnName];
+                    if (data == null || data is DBNull)
+                        continue;
+
+                    var propertyInfo = propertys.FirstOrDefault(w => w.Name == columnName);
+                    if (propertyInfo != null && propertyInfo.CanWrite)
                     {
-                        if (!propertyInfo.CanWrite) continue;
-                        var value = row[propertyInfo.Name];
-                        if (value != DBNull.Value)
-                            propertyInfo.SetValue(entity, value, null);
+                        propertyInfo.SetValue(entity, CheckType(data, propertyInfo.PropertyType), null);
+                    }
+                }
+
+                result.Add(entity);
+            }
+
+
+            return result;
+        }
+
+
+        private static object CheckType(object value, Type conversionType)
+        {
+            var type = Nullable.GetUnderlyingType(conversionType);
+            if (type != null)
+            {
+                if (conversionType.IsGenericType)
+                {
+                    var definition = conversionType.GetGenericTypeDefinition();
+                    if (definition != null && definition == typeof(Nullable<>))
+                    {
+                        var nullableConverter = new System.ComponentModel.NullableConverter(conversionType);
+                        conversionType = nullableConverter.UnderlyingType;
+
+                        if (type.IsEnum)
+                        {
+                            return Enum.Parse(conversionType, value.ToString());
+                        }
+                        else
+                        {
+                            return Convert.ChangeType(value, conversionType);
+                        }
+
+
                     }
                 }
             }
 
 
-            return result;
+            if (conversionType.IsEnum)
+            {
+                if (Enum.IsDefined(conversionType, value))
+                    return Enum.Parse(conversionType, value.ToString());
+                else
+                    throw new InvalidCastException($"Can not cast enum，enum:{conversionType}, value:{value}");
+            }
+            else
+            {
+                return Convert.ChangeType(value, conversionType);
+            }
         }
     }
 }
