@@ -371,15 +371,15 @@ namespace TDengine.Data.Protocol.Native
                             _bind.buffer = p;
                             _bind.buffer_length = sizeof(bool);
                             break;
-                        // int8
-                        case sbyte value:
-                            _bind.buffer_type = (int)TDengineDataType.TSDB_DATA_TYPE_TINYINT;
-                            p = Marshal.AllocHGlobal(sizeof(sbyte));
-                            needFreePointer.Add(p);
-                            Marshal.WriteByte(p, BitConverter.GetBytes(value)[0]);
-                            _bind.buffer = p;
-                            _bind.buffer_length = sizeof(sbyte);
-                            break;
+                        // int8 //8位会用其他类型代替（2023-12-21注释）
+                        //case sbyte value:
+                        //    _bind.buffer_type = (int)TDengineDataType.TSDB_DATA_TYPE_TINYINT;
+                        //    p = Marshal.AllocHGlobal(sizeof(sbyte));
+                        //    needFreePointer.Add(p);
+                        //    Marshal.WriteByte(p, BitConverter.GetBytes(value)[0]);
+                        //    _bind.buffer = p;
+                        //    _bind.buffer_length = sizeof(sbyte);
+                        //    break;
                         // int16
                         case short value:
                             _bind.buffer_type = (int)TDengineDataType.TSDB_DATA_TYPE_SMALLINT;
